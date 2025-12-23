@@ -1,0 +1,44 @@
+name: Deploy AWS SAM
+
+on:
+  push:
+    branches:
+      - develop  # Run when pushed to the develop branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: コードをチェックアウト
+        uses: actions/checkout@v4
+      
+      - name: Python 3.11 をセットアップ
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      
+      - name: AWS 認証
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-1
+
+      - name: AWS SAM をセットアップ
+        uses: aws-actions/setup-sam@v2
+      
+      - name: 必要なパッケージをインストール
+        run: |
+          pip install --upgrade pip
+          pip install -r AICourseSeverlessDevelopmentTest/hello_world/requirements.txt
+
+      - name: SAM ビルド
+        working-directory: AICourseSeverlessDevelopmentTest
+        run: sam build
+
+      - name: SAM デプロイ
+        working-directory: testProject
+        run: sam deploy --no-confirm-changeset --stack-name test-project --capabilities CAPABILITY_IAM
+
+
