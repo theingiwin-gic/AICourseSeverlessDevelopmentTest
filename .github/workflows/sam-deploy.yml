@@ -3,7 +3,7 @@ name: Deploy AWS SAM
 on:
   push:
     branches:
-      - develop  # Run when pushed to the develop branch
+      - main  # Run when pushed to the main branch
 
 jobs:
   deploy:
