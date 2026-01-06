@@ -34,7 +34,7 @@ jobs:
           pip install -r AICourseSeverlessDevelopmentTest/hello_world/requirements.txt
 
       - name: SAM ビルド
-        working-directory: AICourseSeverlessDevelopmentTest
+        working-directory: testProject
         run: sam build
 
       - name: SAM デプロイ
