@@ -1,42 +1,79 @@
 import json
+import os
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
+from boto3.dynamodb.conditions import Key
 
-# import requests
+# DynamoDB client (ENV BASED — exactly as requested)
+TABLE_NAME = os.environ["TABLE_NAME"]
+AWS_REGION = os.environ["AWS_REGION"]
+
+dynamodb = boto3.resource(
+    "dynamodb",
+    region_name=AWS_REGION
+)
+
+table = dynamodb.Table(TABLE_NAME)
 
 
 def lambda_handler(event, context):
-    """Sample pure Lambda function
 
-    Parameters
-    ----------
-    event: dict, required
-        API Gateway Lambda Proxy Input Format
+    try:
+        action = event.get("action")
 
-        Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
+        # WRITE
+        if action == "write":
+            item = {
+                "id": event["id"],
+                "created_at": event["created_at"],
+                "name": event["name"],
+                "age": event["age"]
+            }
+            table.put_item(Item=item)
+            return {
+                "message": "Item written successfully"
+            }
 
-    context: object, required
-        Lambda Context runtime methods and attributes
+        # READ
+        elif action == "read":
+            response = table.get_item(
+                Key={
+                    "id": event["id"],
+                    "created_at": event["created_at"]
+                }
+            )
+            item = response.get("Item", {})
+            return {
+                "message": "Item retrieved successfully",
+                "data": item
+            }
 
-        Context doc: https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
+        # QUERY (FIXED, logic preserved)
+        elif action == "query":
+            response = table.query(
+                KeyConditionExpression=
+                    Key("id").eq(event["id"]) &
+                    Key("created_at").gte(event.get("start_time", "0"))
+            )
+            items = response.get("Items", [])
+            return {
+                "data": items
+            }
 
-    Returns
-    ------
-    API Gateway Lambda Proxy Output Format: dict
+        # SCAN
+        elif action == "scan":
+            response = table.scan()
+            items = response.get("Items", [])
+            return {
+                "data": items
+            }
 
-        Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
-    """
+        else:
+            return {
+                "message": "Invalid action"
+            }
 
-    # try:
-    #     ip = requests.get("http://checkip.amazonaws.com/")
-    # except requests.RequestException as e:
-    #     # Send some context about this error to Lambda Logs
-    #     print(e)
-
-    #     raise e
-
-    return {
-        "statusCode": 200,
-        "body": json.dumps({
-            "message": "hello world",
-            # "location": ip.text.replace("\n", "")
-        }),
-    }
+    except (BotoCoreError, ClientError) as e:
+        return {
+            "error": str(e)
+        }
