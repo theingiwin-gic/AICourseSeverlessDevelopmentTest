@@ -22,7 +22,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: DynamoDb_Testing_TGW
-          AWS_REGION: ap-northeast-1
+          MY_AWS_REGION: ap-northeast-1   # renamed from AWS_REGION
 
       Policies:
         - AWSLambdaBasicExecutionRole
